@@ -9,23 +9,16 @@ services:
     environment:
       POSTGRES_PASSWORD: example
     volumes:
-      - "./pg_hba.conf:/config/pg_hba.conf:ro"
+      - "./pg_hba.conf:/config/pg_hba.conf"
       # Server cert for the client to verify
-      - "./server.crt:/config/server.crt:ro"
-      - "./server.key:/config/server.key:ro"
+      - "./server.crt:/config/server.crt"
+      - "./server.key:/config/server.key"
       # Client cert for the server to verify
-      - "./client.crt:/config/client.crt:ro"
-    command:
+      - "./client.crt:/config/client.crt"
+    entrypoint:
+      - "sh"
       - "-c"
-      - "hba_file=/config/pg_hba.conf"
-      - "-c"
-      - "ssl=on"
-      - "-c"
-      - "ssl_key_file=/config/server.key"
-      - "-c"
-      - "ssl_cert_file=/config/server.crt"
-      - "-c"
-      - "ssl_ca_file=/config/client.crt"
+      - "chown postgres -R /config/* && /docker-entrypoint.sh -c hba_file=/config/pg_hba.conf -c ssl=on -c ssl_key_file=/config/server.key -c ssl_cert_file=/config/server.crt -c ssl_ca_file=/config/client.crt"
     ports:
       - "127.0.0.1:5432:5432"
 
