@@ -1,0 +1,45 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres:11.5-alpine
+    # Specify this for ssl to use the correct hostname
+    hostname: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+    volumes:
+      - "./pg_hba.conf:/config/pg_hba.conf:ro"
+      # Server cert for the client to verify
+      - "./server.crt:/config/server.crt:ro"
+      - "./server.key:/config/server.key:ro"
+      # Client cert for the server to verify
+      - "./client.crt:/config/client.crt:ro"
+    command:
+      - "-c"
+      - "hba_file=/config/pg_hba.conf"
+      - "-c"
+      - "ssl=on"
+      - "-c"
+      - "ssl_key_file=/config/server.key"
+      - "-c"
+      - "ssl_cert_file=/config/server.crt"
+      - "-c"
+      - "ssl_ca_file=/config/client.crt"
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  python:
+    image: python:slim
+    hostname: python
+    volumes:
+      - "./:/src"
+      # Server cert to verify the server
+      - "./server.crt:/root/.postgresql/root.crt:ro"
+      # Client cert and key for server to verify
+      - "./client.crt:/root/.postgresql/postgresql.crt:ro"
+      - "./client.key:/root/.postgresql/postgresql.key:ro"
+    entrypoint:
+      - "sh"
+      - "-c"
+      - "pip install psycopg2-binary && while true; do python ./src/test-ssl.py; sleep 1; done"
